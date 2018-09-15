@@ -73,10 +73,10 @@ void setup() {
   mpu.calibrateGyro();
 
   PCICR |= ( 1 << PCIE0 );
-  PCMSK0 |= ( 1 << PCINT18);
-  //  PCMSK0 |= ( 1 << PCINT2);
-  //  PCMSK0 |= ( 1 << PCINT3);
-  //  PCMSK0 |= ( 1 << PCINT4);
+  PCMSK0 |= ( 1 << PCINT1);
+  PCMSK0 |= ( 1 << PCINT2);
+  PCMSK0 |= ( 1 << PCINT3);
+  PCMSK0 |= ( 1 << PCINT4);
 
   esc.init();
 
@@ -97,38 +97,38 @@ ISR(PCINT0_vect) {
 
 
   long timerValue = micros();
-  if (lastChannel[0] == 0 && PIND & B00000100) {
+  if (lastChannel[0] == 0 && PINB & B00000010) {
     lastChannel[0] = 1;
     timer[0] = timerValue;
-  } else if (lastChannel[0] == 1 && !(PIND & B00000100)) {
+  } else if (lastChannel[0] == 1 && !(PINB & B00000010)) {
     lastChannel[0] = 0;
     input[0] = timerValue - timer[0];
   }
 
-  //  if (lastChannel[1] == 0 && PINB & B00000100) {
-  //    lastChannel[1] = 1;
-  //    timer[1] = timerValue;
-  //  } else if (lastChannel[1] == 1 && !(PINB & B00000100)) {
-  //    lastChannel[1] = 0;
-  //    input[1] = timerValue - timer[1];
-  //  }
-  //
-  //  if (lastChannel[2] == 0 && PINB & B00001000) {
-  //    lastChannel[2] = 1;
-  //    timer[2] = timerValue;
-  //  } else if (lastChannel[2] == 1 && !(PINB & B00001000)) {
-  //    lastChannel[2] = 0;
-  //    input[2] = timerValue - timer[2];
-  //  }
-  //
-  //
-  //  if (lastChannel[3] == 0 && PINB & B00010000) {
-  //    lastChannel[3] = 1;
-  //    timer[3] = timerValue;
-  //  } else if (lastChannel[3] == 1 && !(PINB & B00010000)) {
-  //    lastChannel[3] = 0;
-  //    input[3] = timerValue - timer[3];
-  //  }
+  if (lastChannel[1] == 0 && PINB & B00000100) {
+    lastChannel[1] = 1;
+    timer[1] = timerValue;
+  } else if (lastChannel[1] == 1 && !(PINB & B00000100)) {
+    lastChannel[1] = 0;
+    input[1] = timerValue - timer[1];
+  }
+
+  if (lastChannel[2] == 0 && PINB & B00001000) {
+    lastChannel[2] = 1;
+    timer[2] = timerValue;
+  } else if (lastChannel[2] == 1 && !(PINB & B00001000)) {
+    lastChannel[2] = 0;
+    input[2] = timerValue - timer[2];
+  }
+
+
+  if (lastChannel[3] == 0 && PINB & B00010000) {
+    lastChannel[3] = 1;
+    timer[3] = timerValue;
+  } else if (lastChannel[3] == 1 && !(PINB & B00010000)) {
+    lastChannel[3] = 0;
+    input[3] = timerValue - timer[3];
+  }
 }
 
 
@@ -144,7 +144,7 @@ void printInterrupt() {
 
 void loop() {
 
-  printInterrupt();
+  //printInterrupt();
 
   //nbIterations += 1 ;
 
@@ -159,7 +159,7 @@ void loop() {
 
   // compute the angles (pitch and roll)
   AccelAngles accelAngles = mpu.computeAngles();
-  mpu.printAngles();
+  //mpu.printAngles();
 
   timePrev = timeDevice;
   timeDevice = micros();
@@ -167,7 +167,7 @@ void loop() {
 
   //Serial.print("White ");
 
-  computePid(accelAngles.pitch, pidIntegrateX, previousErrorX, elapsedTime, false);
+  computePid(accelAngles.pitch, pidIntegrateX, previousErrorX, elapsedTime, true);
 
   previousErrorX = pidResult[2];
   pidIntegrateX = pidResult[3];
@@ -190,8 +190,8 @@ void loop() {
 
   //We wait until 4000us are passed.
   float delta = micros() - loopTimer;
-//  Serial.print("Delta \t\t");
-//  Serial.println(delta);
+  //  Serial.print("Delta \t\t");
+  //  Serial.println(delta);
   while (micros() - loopTimer < 4000);
   loopTimer = micros();
 
