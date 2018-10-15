@@ -10,18 +10,20 @@
 #define GYRO_ADRESS 0x68
 
 struct AccelRaw {
-  int16_t accX;
-  int16_t accY;
-  int16_t accZ;
+  long accX;
+  long accY;
+  long accZ;
   int16_t temperature;
-  int16_t gyroRoll;
-  int16_t gyroPitch;
-  int16_t gyroYaw;
+  long gyroRoll;
+  long gyroPitch;
+  long gyroYaw;
 };
 
 struct AccelAngles {
   double pitch;
   double roll;
+  double tmpPitch;
+  double tmpRoll;
 };
 
 class MPU6050 {
@@ -29,7 +31,10 @@ class MPU6050 {
     double gyroRollCal = 0;
     double gyroPitchCal = 0;
     double gyroYawCal = 0;
+    double accXCal = 0;
+    double accYCal = 0;
     AccelAngles accelAngles;
+    boolean setupGyro = false;
   
     MPU6050();
     void init();

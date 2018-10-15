@@ -19,7 +19,7 @@
 #define ACC_UNIT (8,192.0)
 
 #define KP (1.5)
-#define KI (0.005)
+#define KI (0.001)
 #define KD (0.5)
 
 MPU6050 mpu;
@@ -28,7 +28,7 @@ ESC esc;
 
 float timeDevice, timePrev, elapsedTime, loopTimer;
 
-int16_t accRawX, accRawY, accRawZ;
+int targetStopMotorValue = 1080;
 
 float refAngleX = 0, refAngleY = 0;
 float throttle = 1100;
@@ -83,6 +83,7 @@ void setup() {
   AccelAngles accelAngles = mpu.computeAngles();
   Serial.print("Desired angle \t");
   mpu.printAngles();
+  refAngleX = accelAngles.pitch;
 
   Serial.print("P: ");
   Serial.print(KP);
@@ -139,23 +140,22 @@ void printInterrupt() {
   Serial.print(" - ");
   Serial.print(input[2]);
   Serial.print(" - ");
-  Serial.println(input[3]);
+  Serial.print(input[3]);
 }
 
 void loop() {
 
-  //printInterrupt();
+  printInterrupt();
 
-  //nbIterations += 1 ;
+  if (input[1] < targetStopMotorValue && input[2] < targetStopMotorValue) {
+    throttle = 0;
+  } else {
+    // convert the RC value into the motor value
+    throttle = map(input[2], 1000, 1980, minPulseRate - 50, maxPulseRate);
+  }
 
-  // read the input channels fromt the RC
-  // ChannelRaw channelRaw = fsi.readChannelRaw();
-  //  fsi.printChannels(fsi.channelRaw);
-
-  // convert the RC value into the motor value
-  throttle = map(input[2], 980, 1980, minPulseRate, maxPulseRate);
-  // Serial.print("Throttle ");
-  //  Serial.println(throttle);
+  Serial.print("\t throtle ");
+  Serial.println(throttle);
 
   // compute the angles (pitch and roll)
   AccelAngles accelAngles = mpu.computeAngles();
@@ -167,7 +167,7 @@ void loop() {
 
   //Serial.print("White ");
 
-  computePid(accelAngles.pitch, pidIntegrateX, previousErrorX, elapsedTime, true);
+  computePid(accelAngles.pitch, pidIntegrateX, previousErrorX, elapsedTime, false);
 
   previousErrorX = pidResult[2];
   pidIntegrateX = pidResult[3];
@@ -190,8 +190,8 @@ void loop() {
 
   //We wait until 4000us are passed.
   float delta = micros() - loopTimer;
-  //  Serial.print("Delta \t\t");
-  //  Serial.println(delta);
+  Serial.print("\t");
+  Serial.println(delta);
   while (micros() - loopTimer < 4000);
   loopTimer = micros();
 
@@ -219,24 +219,31 @@ void computePid(float totalAngleX, float pidIntegrate, float previousError, floa
   pwmRight = constrain(pwmRight, minPulseRate, maxPulseRate);
 
   if (logResult) {
-    Serial.print(" --- PID ");
-    Serial.print(pid);
-    Serial.print(" P: ");
-    Serial.print(pidProportional);
-    Serial.print(" I: ");
-    Serial.print(pidIntegrate);
-    Serial.print(" D: ");
-    Serial.print(pidDerivative);
-    Serial.print(")  - pwnLeft ");
-    Serial.print(pwmLeft);
-    Serial.print(" - pwmRight ");
-    Serial.print(pwmRight);
-    Serial.print("   -- elapsedTime ");
-    Serial.print(elapsedTime);
-    Serial.print(" - throttle ");
-    Serial.print(throttle);
-    Serial.print(" - error ");
-    Serial.println(error);
+    // Serial.print(" --- PID ");
+    //Serial.print(pid);
+    //Serial.print(" P: ");
+    //Serial.print(pidProportional);
+    //Serial.print(" I: ");
+    //Serial.print(pidIntegrate);
+    //Serial.print(" D: ");
+    //if (pidDerivative >= 0) {
+    //  Serial.print(" ");
+    //}
+    //Serial.print(pidDerivative);
+    //Serial.print(")  - pwnLeft ");
+    //Serial.print(pwmLeft);
+    //Serial.print(" - pwmRight ");
+    //Serial.print(pwmRight);
+    // Serial.print("   -- elapsedTime ");
+    // Serial.print(elapsedTime);
+    // Serial.print(" - throttle ");
+    // Serial.print(throttle);
+    //Serial.print(" - totalAngleX ");
+    //Serial.print(totalAngleX);
+    //Serial.print(" - refAngleX ");
+    //Serial.print(refAngleX);
+    //Serial.print(" - error ");
+    //Serial.print(error);
   }
 
   pidResult[0] = pwmRight;

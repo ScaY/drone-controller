@@ -39,8 +39,9 @@ AccelRaw MPU6050::readAccelRaw() {
 
   AccelRaw accelRaw;
 
-  accelRaw.accX = Wire.read() << 8 | Wire.read();
+  // Invert the accelometer data to be aligne with the gyro
   accelRaw.accY = Wire.read() << 8 | Wire.read();
+  accelRaw.accX = Wire.read() << 8 | Wire.read();
   accelRaw.accZ = Wire.read() << 8 | Wire.read();
   accelRaw.temperature = Wire.read() << 8 | Wire.read();
   accelRaw.gyroRoll = Wire.read() << 8 | Wire.read();
@@ -51,6 +52,9 @@ AccelRaw MPU6050::readAccelRaw() {
   accelRaw.gyroPitch -= this->gyroPitchCal;
   accelRaw.gyroYaw -= this->gyroYawCal;
 
+  accelRaw.accY -= this->accYCal;
+  accelRaw.accX -= this->accXCal;
+
   return accelRaw;
 }
 
@@ -59,6 +63,8 @@ void MPU6050::calibrateGyro() {
   double gyroRollCalSum = 0;
   double gyroPitchCalSum = 0;
   double gyroYawCalSum = 0;
+  double accXCalSum = 0;
+  double accYCalSum = 0;
 
   int nbCal = 1000;
   int i = 0;
@@ -75,22 +81,33 @@ void MPU6050::calibrateGyro() {
   this->gyroPitchCal = gyroPitchCalSum / nbCal;
   this->gyroYawCal = gyroYawCalSum / nbCal;
 
-  Serial.print("Gyro calibration roll ");
-  Serial.print(this->gyroRollCal);
-  Serial.print(" pitch ");
-  Serial.println(this->gyroPitchCal);
+  for (i = 0; i < nbCal;  i++) {
+    AccelRaw accelRaw = this->readAccelRaw();
+    accXCalSum += accelRaw.accX;
+    accYCalSum += accelRaw.accY;
+    delay(3); // 250 Hz
+  }
+
+
+  this->accXCal = accXCalSum / nbCal;
+  this->accYCal = accYCalSum / nbCal;
+
+//  Serial.print("Gyro calibration roll ");
+//  Serial.print(this->gyroRollCal);
+//  Serial.print(" pitch ");
+//  Serial.println(this->gyroPitchCal);
+//
+//
+//
+//  Serial.print("Acc calibration roll ");
+//  Serial.print(this->accXCal);
+//  Serial.print(" pitch ");
+//  Serial.println(this->accYCal);
 }
 
 AccelAngles MPU6050::computeAngles() {
 
   AccelRaw accelRaw = readAccelRaw();
-
-  //  Serial.print("raw pitch   ");
-  //  Serial.print(accelRaw.gyroPitch);
-  //  Serial.print("   roll ");
-  //  Serial.print(accelRaw.gyroRoll);
-  //
-  //  Serial.print("   \t   ");
 
   //Gyro angle calculations
   //0.0000611 = 1 / (250Hz * 65.5)
@@ -99,8 +116,9 @@ AccelAngles MPU6050::computeAngles() {
   accelAngles.roll += accelRaw.gyroRoll * 0.0000611;
 
   //0.000001066 = 0.0000611 * (3.142(PI) / 180degr) The Arduino sin function is in radians and not degrees.
-  // accelAngles.pitch -= accelAngles.roll * sin((float)accelRaw.gyroYaw * 0.000001066);                  //If the IMU has yawed transfer the roll angle to the pitch angel.
-  // accelAngles.roll += accelAngles.pitch * sin((float)accelRaw.gyroYaw * 0.000001066);                  //If the IMU has yawed transfer the pitch angle to the roll angel.
+  accelAngles.pitch -=  accelAngles.roll * sin((float)accelRaw.gyroYaw * 0.000001066);                  //If the IMU has yawed transfer the roll angle to the pitch angel.
+  accelAngles.roll +=  accelAngles.pitch * sin((float)accelRaw.gyroYaw * 0.000001066);                  //If the IMU has yawed transfer the pitch angle to the roll angel.
+
 
   //Accelerometer angle calculations
   float accTotalVector = sqrt((accelRaw.accX * accelRaw.accX) + (accelRaw.accY * accelRaw.accY) + (accelRaw.accZ * accelRaw.accZ));    //Calculate the total accelerometer vector.
@@ -116,8 +134,28 @@ AccelAngles MPU6050::computeAngles() {
     angleRollAcc = asin((float)accelRaw.accX / accTotalVector) * 57.296;               //Calculate the roll angle.
   }
 
-  //accelAngles.pitch = accelAngles.pitch * 0.9996 + anglePitchAcc * 0.0004;                   //Correct the drift of the gyro pitch angle with the accelerometer pitch angle.
-  //accelAngles.roll = accelAngles.roll * 0.9996 + angleRollAcc * 0.0004;                      //Correct the drift of the gyro roll angle with the accelerometer roll angle.
+//  Serial.print( accelAngles.pitch);
+//  Serial.print(" \t");
+//  Serial.print( accelAngles.roll);
+//  Serial.print(" \t");
+//
+//  Serial.print( anglePitchAcc);
+//  Serial.print(" \t");
+//  Serial.print( angleRollAcc);
+//  Serial.print(" \t");
+
+  if (this->setupGyro) {
+
+    accelAngles.pitch = accelAngles.pitch; //* 0.9996 + anglePitchAcc * 0.0004;                   //Correct the drift of the gyro pitch angle with the accelerometer pitch angle.
+    accelAngles.roll = accelAngles.roll; //* 0.9996 + angleRollAcc * 0.0004;                      //Correct the drift of the gyro roll angle with the accelerometer roll angle.
+
+  } else {
+    accelAngles.pitch = anglePitchAcc;
+    accelAngles.roll = angleRollAcc;
+    this->setupGyro = true;
+  }
+
+
 
   return accelAngles;
 }
