@@ -6,6 +6,9 @@ MPU6050::MPU6050() {
 }
 
 void MPU6050::init() {
+  Serial.print("MPU initialisation... ");
+  Wire.endTransmission();
+
   Wire.beginTransmission(GYRO_ADRESS);                        //Start communication with the MPU-6050.
   Wire.write(0x6B);                                            //We want to write to the PWR_MGMT_1 register (6B hex).
   Wire.write(0x00);                                            //Set the register bits as 00000000 to activate the gyro.
@@ -25,6 +28,8 @@ void MPU6050::init() {
   Wire.write(0x1A);                                            //We want to write to the CONFIG register (1A hex).
   Wire.write(0x03);                                            //Set the register bits as 00000011 (Set Digital Low Pass Filter to ~43Hz).
   Wire.endTransmission();                                      //End the transmission with the gyro.
+
+  Serial.println("OK");
 
 }
 
@@ -52,14 +57,18 @@ AccelRaw MPU6050::readAccelRaw() {
   accelRaw.gyroPitch -= this->gyroPitchCal;
   accelRaw.gyroYaw -= this->gyroYawCal;
 
-  accelRaw.accY -= this->accYCal;
-  accelRaw.accX -= this->accXCal;
+  //accelRaw.accY -= this->accYCal;
+  //accelRaw.accX -= this->accXCal;
+
+  accelRaw.accY *= -1;
+  //accelRaw.accX *= -1;
 
   return accelRaw;
 }
 
 void MPU6050::calibrateGyro() {
 
+  Serial.print("MPU gyro calibration... ");
   double gyroRollCalSum = 0;
   double gyroPitchCalSum = 0;
   double gyroYawCalSum = 0;
@@ -81,28 +90,14 @@ void MPU6050::calibrateGyro() {
   this->gyroPitchCal = gyroPitchCalSum / nbCal;
   this->gyroYawCal = gyroYawCalSum / nbCal;
 
-  for (i = 0; i < nbCal;  i++) {
-    AccelRaw accelRaw = this->readAccelRaw();
-    accXCalSum += accelRaw.accX;
-    accYCalSum += accelRaw.accY;
-    delay(3); // 250 Hz
-  }
 
 
-  this->accXCal = accXCalSum / nbCal;
-  this->accYCal = accYCalSum / nbCal;
+  Serial.print("Gyro calibration roll ");
+  Serial.print(this->gyroRollCal);
+  Serial.print(" pitch ");
+  Serial.println(this->gyroPitchCal);
 
-//  Serial.print("Gyro calibration roll ");
-//  Serial.print(this->gyroRollCal);
-//  Serial.print(" pitch ");
-//  Serial.println(this->gyroPitchCal);
-//
-//
-//
-//  Serial.print("Acc calibration roll ");
-//  Serial.print(this->accXCal);
-//  Serial.print(" pitch ");
-//  Serial.println(this->accYCal);
+  Serial.println("OK");
 }
 
 AccelAngles MPU6050::computeAngles() {
@@ -126,28 +121,21 @@ AccelAngles MPU6050::computeAngles() {
   float angleRollAcc = 0;
 
 
-  // 57.296 = 1 / (3.142 / 180)
+  float scaleFactor = 1 / (4.096 / 180);
   if (abs(accelRaw.accY) < accTotalVector) {                                             //Prevent the asin function to produce a NaN.
-    anglePitchAcc = asin((float)accelRaw.accY / accTotalVector) * 57.296;              //Calculate the pitch angle.
+    anglePitchAcc = asin((float)accelRaw.accY / accTotalVector) * scaleFactor;              //Calculate the pitch angle.
   }
   if (abs(accelRaw.accX) < accTotalVector) {                                             //Prevent the asin function to produce a NaN.
-    angleRollAcc = asin((float)accelRaw.accX / accTotalVector) * 57.296;               //Calculate the roll angle.
+    angleRollAcc = asin((float)accelRaw.accX / accTotalVector) * scaleFactor;               //Calculate the roll angle.
   }
 
-//  Serial.print( accelAngles.pitch);
-//  Serial.print(" \t");
-//  Serial.print( accelAngles.roll);
-//  Serial.print(" \t");
-//
-//  Serial.print( anglePitchAcc);
-//  Serial.print(" \t");
-//  Serial.print( angleRollAcc);
-//  Serial.print(" \t");
+  // Serial.print( anglePitchAcc);
+  // Serial.print(" \t");
 
   if (this->setupGyro) {
 
-    accelAngles.pitch = accelAngles.pitch; //* 0.9996 + anglePitchAcc * 0.0004;                   //Correct the drift of the gyro pitch angle with the accelerometer pitch angle.
-    accelAngles.roll = accelAngles.roll; //* 0.9996 + angleRollAcc * 0.0004;                      //Correct the drift of the gyro roll angle with the accelerometer roll angle.
+    accelAngles.pitch = accelAngles.pitch * 0.9996 + anglePitchAcc * 0.0004;                   //Correct the drift of the gyro pitch angle with the accelerometer pitch angle.
+    accelAngles.roll = accelAngles.roll * 0.9996 + angleRollAcc * 0.0004;                     //Correct the drift of the gyro roll angle with the accelerometer roll angle.
 
   } else {
     accelAngles.pitch = anglePitchAcc;
@@ -155,6 +143,11 @@ AccelAngles MPU6050::computeAngles() {
     this->setupGyro = true;
   }
 
+
+  //Serial.print(accelAngles.pitch);
+  //Serial.print(" \t");
+  //Serial.print( accelAngles.roll);
+  //Serial.print(" \t");
 
 
   return accelAngles;

@@ -4,8 +4,8 @@
 #include <Servo.h>
 #include "Arduino.h"
 
-#define ESC_WHITE_RIGHT 2
-#define ESC_WHITE_LEFT 3
+#define ESC_WHITE_RIGHT 3
+#define ESC_WHITE_LEFT 2
 #define ESC_RED_LEFT 4
 #define ESC_RED_RIGHT 5
 

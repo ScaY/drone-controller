@@ -22,20 +22,20 @@ struct AccelRaw {
 struct AccelAngles {
   double pitch;
   double roll;
-  double tmpPitch;
-  double tmpRoll;
 };
 
 class MPU6050 {
   public:
+    double accPitchCal = 0;
+    double accRollCal = 0;
     double gyroRollCal = 0;
     double gyroPitchCal = 0;
     double gyroYawCal = 0;
     double accXCal = 0;
     double accYCal = 0;
     AccelAngles accelAngles;
-    boolean setupGyro = false;
-  
+    boolean setupGyro = false; //false;
+
     MPU6050();
     void init();
     AccelRaw readAccelRaw();

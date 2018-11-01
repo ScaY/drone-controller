@@ -6,10 +6,14 @@ FSI6::FSI6() {
 }
 
 void FSI6::init() {
+  Serial.print("FSI initialisation... ");
+  
   pinMode(CH1_PIN, INPUT);
   pinMode(CH2_PIN, INPUT);
   pinMode(CH3_PIN, INPUT);
   pinMode(CH4_PIN, INPUT);
+
+  Serial.println("OK");
 }
 
 ChannelRaw FSI6::readChannelRaw() {

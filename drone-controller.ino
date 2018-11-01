@@ -18,9 +18,9 @@
 #define G_PWR_MGM 0x3E
 #define ACC_UNIT (8,192.0)
 
-#define KP (1.5)
+#define KP (5.00)
 #define KI (0.001)
-#define KD (0.5)
+#define KD (25.0)
 
 MPU6050 mpu;
 FSI6 fsi;
@@ -79,6 +79,7 @@ void setup() {
   PCMSK0 |= ( 1 << PCINT4);
 
   esc.init();
+
 
   AccelAngles accelAngles = mpu.computeAngles();
   Serial.print("Desired angle \t");
@@ -145,7 +146,8 @@ void printInterrupt() {
 
 void loop() {
 
-  printInterrupt();
+  //printInterrupt();
+
 
   if (input[1] < targetStopMotorValue && input[2] < targetStopMotorValue) {
     throttle = 0;
@@ -154,8 +156,11 @@ void loop() {
     throttle = map(input[2], 1000, 1980, minPulseRate - 50, maxPulseRate);
   }
 
-  Serial.print("\t throtle ");
-  Serial.println(throttle);
+
+  //throttle = 1400;
+
+  //  Serial.print("throtle ");
+  // Serial.println(throttle);
 
   // compute the angles (pitch and roll)
   AccelAngles accelAngles = mpu.computeAngles();
@@ -167,7 +172,7 @@ void loop() {
 
   //Serial.print("White ");
 
-  computePid(accelAngles.pitch, pidIntegrateX, previousErrorX, elapsedTime, false);
+  computePid(accelAngles.pitch, pidIntegrateX, previousErrorX, elapsedTime, true);
 
   previousErrorX = pidResult[2];
   pidIntegrateX = pidResult[3];
@@ -208,10 +213,11 @@ void computePid(float totalAngleX, float pidIntegrate, float previousError, floa
   if (error < 3 && error > -3) {
     pidIntegrate = pidIntegrate + KI * error;
   }
-  pidDerivative = KD * ( (error - previousError) / elapsedTime);
+  //pidDerivative = KD * ( (error - previousError) / elapsedTime);
+  pidDerivative = KD * (error - previousError);
 
   pid = pidProportional + pidIntegrate + pidDerivative;
-  pid = constrain(pid, -800, 800);
+  pid = constrain(pid, -400, 400);
 
   pwmLeft = throttle + pid;
   pwmRight = throttle - pid;
@@ -219,31 +225,28 @@ void computePid(float totalAngleX, float pidIntegrate, float previousError, floa
   pwmRight = constrain(pwmRight, minPulseRate, maxPulseRate);
 
   if (logResult) {
-    // Serial.print(" --- PID ");
-    //Serial.print(pid);
-    //Serial.print(" P: ");
-    //Serial.print(pidProportional);
-    //Serial.print(" I: ");
-    //Serial.print(pidIntegrate);
-    //Serial.print(" D: ");
-    //if (pidDerivative >= 0) {
-    //  Serial.print(" ");
-    //}
-    //Serial.print(pidDerivative);
-    //Serial.print(")  - pwnLeft ");
+    //    Serial.print("PID ");
+    //    Serial.print(pid);
+    //    Serial.print("\t");
+    //    Serial.print(pidProportional);
+    //    Serial.print("\t");
+    //    Serial.print(pidIntegrate);
+    //    Serial.print("\t");
+    //    Serial.print(pidDerivative);
+    //    Serial.print(" \t ");
     //Serial.print(pwmLeft);
-    //Serial.print(" - pwmRight ");
+    //Serial.print(" \t ");
     //Serial.print(pwmRight);
     // Serial.print("   -- elapsedTime ");
     // Serial.print(elapsedTime);
     // Serial.print(" - throttle ");
     // Serial.print(throttle);
-    //Serial.print(" - totalAngleX ");
-    //Serial.print(totalAngleX);
-    //Serial.print(" - refAngleX ");
-    //Serial.print(refAngleX);
-    //Serial.print(" - error ");
-    //Serial.print(error);
+    //    Serial.print("\t");
+    //    Serial.print(totalAngleX);
+    //    Serial.print(" \t ");
+    //    Serial.print(refAngleX);
+    //    Serial.print(" \t ");
+    //    Serial.print(error);
   }
 
   pidResult[0] = pwmRight;
