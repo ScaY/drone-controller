@@ -22,6 +22,7 @@ struct AccelRaw {
 struct AccelAngles {
   double pitch;
   double roll;
+  double yaw = 0;
 };
 
 class MPU6050 {

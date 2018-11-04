@@ -8,18 +8,18 @@ ESC::ESC() {
 void ESC::init() {
 
   // set up pin mode
-  escWhiteRight.attach(ESC_WHITE_RIGHT, MIN_PULSE_RATE, MAX_PULSE_RATE);
-  escWhiteLeft.attach(ESC_WHITE_LEFT, MIN_PULSE_RATE, MAX_PULSE_RATE);
-  escRedRight.attach(ESC_RED_RIGHT, MIN_PULSE_RATE, MAX_PULSE_RATE);
-  escRedLeft.attach(ESC_RED_LEFT, MIN_PULSE_RATE, MAX_PULSE_RATE);
+  frontLeft.attach(ESC_FRONT_LEFT, MIN_PULSE_RATE, MAX_PULSE_RATE);
+  frontRight.attach(ESC_FRONT_RIGHT, MIN_PULSE_RATE, MAX_PULSE_RATE);
+  rearRight.attach(ESC_REAR_RIGHT, MIN_PULSE_RATE, MAX_PULSE_RATE);
+  rearLeft.attach(ESC_REAR_LEFT, MIN_PULSE_RATE, MAX_PULSE_RATE);
 
 
   // init motor to min
   Serial.println("Send min to ESC");
-  escWhiteRight.writeMicroseconds(MIN_PULSE_RATE);
-  escRedRight.writeMicroseconds(MIN_PULSE_RATE);
-  escWhiteLeft.writeMicroseconds(MIN_PULSE_RATE);
-  escRedLeft.writeMicroseconds(MIN_PULSE_RATE);
+  frontRight.writeMicroseconds(MIN_PULSE_RATE);
+  frontLeft.writeMicroseconds(MIN_PULSE_RATE);
+  rearRight.writeMicroseconds(MIN_PULSE_RATE);
+  rearLeft.writeMicroseconds(MIN_PULSE_RATE);
   delay(2000);
 
   // start motor
@@ -30,17 +30,17 @@ void ESC::init() {
 
   // init motor to max
   Serial.println("Send max to ESC");
-  escWhiteRight.writeMicroseconds(MAX_PULSE_RATE);
-  escRedRight.writeMicroseconds(MAX_PULSE_RATE);
-  escWhiteLeft.writeMicroseconds(MAX_PULSE_RATE);
-  escRedLeft.writeMicroseconds(MAX_PULSE_RATE);
+  frontRight.writeMicroseconds(MAX_PULSE_RATE);
+  frontLeft.writeMicroseconds(MAX_PULSE_RATE);
+  rearRight.writeMicroseconds(MAX_PULSE_RATE);
+  rearLeft.writeMicroseconds(MAX_PULSE_RATE);
   delay(2000);
 
 }
 
 void ESC::stopMotor() {
-  escWhiteRight.writeMicroseconds(MIN_PULSE_RATE);
-  escRedRight.writeMicroseconds(MIN_PULSE_RATE);
-  escWhiteLeft.writeMicroseconds(MIN_PULSE_RATE);
-  escRedLeft.writeMicroseconds(MIN_PULSE_RATE);
+  frontRight.writeMicroseconds(MIN_PULSE_RATE);
+  frontLeft.writeMicroseconds(MIN_PULSE_RATE);
+  rearRight.writeMicroseconds(MIN_PULSE_RATE);
+  rearLeft.writeMicroseconds(MIN_PULSE_RATE);
 }

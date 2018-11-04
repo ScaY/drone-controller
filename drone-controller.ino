@@ -165,10 +165,10 @@ void loop() {
 
   PIDDrone pidDrone = pid.computePidDrone(accelAngles.pitch, accelAngles.roll, accelAngles.yaw);
   
-  esc.escWhiteLeft.writeMicroseconds(throttle + pidDrone.frontLeft);
-  esc.escWhiteRight.writeMicroseconds(hrottle + pidDrone.frontRight);
-  esc.escWhiteLeft.writeMicroseconds(throttle + pidDrone.frontLeft);
-  esc.escWhiteRight.writeMicroseconds(hrottle + pidDrone.frontRight);
+  esc.frontLeft.writeMicroseconds(throttle + pidDrone.frontLeft);
+  esc.frontRight.writeMicroseconds(throttle + pidDrone.frontRight);
+  esc.rearLeft.writeMicroseconds(throttle + pidDrone.rearLeft);
+  esc.rearRight.writeMicroseconds(throttle + pidDrone.rearRight);
   
   if (abs(pidResult[4]) > 10) {
     digitalWrite(ledPidWhitePin, HIGH);
@@ -176,12 +176,6 @@ void loop() {
     digitalWrite(ledPidWhitePin, LOW);
   }
 
-/*  computePid(accelAngles.roll, pidIntegrateY, previousErrorY, elapsedTime, false);
-  previousErrorY = pidResult[2];
-  pidIntegrateY = pidResult[3];
-  esc.escRedRight.writeMicroseconds(pidResult[0]);
-  esc.escRedLeft.writeMicroseconds(pidResult[1]);
-*/
 
   //We wait until 4000us are passed.
   float delta = micros() - loopTimer;
