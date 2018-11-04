@@ -4,6 +4,7 @@
 #include "MPU6050.h"
 #include "FSI6.h"
 #include "ESC.h"
+#include "PID.h"
 
 //#define ADXL345 (0x53)             // Device address as specified in data sheet //ADXL345 accelerometer
 #define GYRO (0x68)               // Gyro address
@@ -18,13 +19,10 @@
 #define G_PWR_MGM 0x3E
 #define ACC_UNIT (8,192.0)
 
-#define KP (5.00)
-#define KI (0.001)
-#define KD (25.0)
-
 MPU6050 mpu;
 FSI6 fsi;
 ESC esc;
+PID pid;
 
 float timeDevice, timePrev, elapsedTime, loopTimer;
 
@@ -34,7 +32,7 @@ float refAngleX = 0, refAngleY = 0;
 float throttle = 1100;
 
 float pidResult[5];
-float error = 0, previousErrorX = 0, previousErrorY = 0, pidIntegrateX = 0, pidIntegrateY = 0, pidProportional = 0, pidDerivative = 0, pid, pwmLeft, pwmRight;
+float error = 0, previousErrorX = 0, previousErrorY = 0, pidIntegrateX = 0, pidIntegrateY = 0, pidProportional = 0, pidDerivative = 0, pwmLeft, pwmRight;
 
 int minPulseRate = 1100;
 int maxPulseRate = 1900;
@@ -45,7 +43,7 @@ Servo escRedRight;
 Servo escRedLeft;
 
 int relayPin = 7;         // Relay
-int ledPidWhitePin = 9;   // led to warn that a pid has been set
+int ledPidWhitePin = 6;   // led to warn that a pid has been set
 
 int nbSignalLost = 0;
 int nbIterations = 0;
@@ -68,7 +66,7 @@ void setup() {
   loopTimer = micros();
 
   // Led pin
-  //pinMode(ledPidWhitePin, OUTPUT);
+  pinMode(ledPidWhitePin, OUTPUT);
 
   mpu.calibrateGyro();
 
@@ -85,6 +83,10 @@ void setup() {
   Serial.print("Desired angle \t");
   mpu.printAngles();
   refAngleX = accelAngles.pitch;
+
+  pid.refAnglePitch = accelAngles.pitch;
+  pid.refAngleRoll = accelAngles.roll;
+  pid.refAngleYaw = accelAngles.yaw;
 
   Serial.print("P: ");
   Serial.print(KP);
@@ -150,48 +152,36 @@ void loop() {
 
 
   if (input[1] < targetStopMotorValue && input[2] < targetStopMotorValue) {
+    // Stop the motor
     throttle = 0;
   } else {
     // convert the RC value into the motor value
     throttle = map(input[2], 1000, 1980, minPulseRate - 50, maxPulseRate);
   }
 
-
-  //throttle = 1400;
-
-  //  Serial.print("throtle ");
-  // Serial.println(throttle);
-
   // compute the angles (pitch and roll)
   AccelAngles accelAngles = mpu.computeAngles();
-  //mpu.printAngles();
 
-  timePrev = timeDevice;
-  timeDevice = micros();
-  elapsedTime = (timeDevice - timePrev) / 1000000;
 
-  //Serial.print("White ");
-
-  computePid(accelAngles.pitch, pidIntegrateX, previousErrorX, elapsedTime, true);
-
-  previousErrorX = pidResult[2];
-  pidIntegrateX = pidResult[3];
-  esc.escWhiteLeft.writeMicroseconds(pidResult[0]);
-  esc.escWhiteRight.writeMicroseconds(pidResult[1]);
-
-  if (abs(pidResult[2]) > 5) {
+  PIDDrone pidDrone = pid.computePidDrone(accelAngles.pitch, accelAngles.roll, accelAngles.yaw);
+  
+  esc.escWhiteLeft.writeMicroseconds(throttle + pidDrone.frontLeft);
+  esc.escWhiteRight.writeMicroseconds(hrottle + pidDrone.frontRight);
+  esc.escWhiteLeft.writeMicroseconds(throttle + pidDrone.frontLeft);
+  esc.escWhiteRight.writeMicroseconds(hrottle + pidDrone.frontRight);
+  
+  if (abs(pidResult[4]) > 10) {
     digitalWrite(ledPidWhitePin, HIGH);
   } else {
     digitalWrite(ledPidWhitePin, LOW);
   }
 
-  //  Serial.print("Red ");
-
-  computePid(accelAngles.roll, pidIntegrateY, previousErrorY, elapsedTime, false);
+/*  computePid(accelAngles.roll, pidIntegrateY, previousErrorY, elapsedTime, false);
   previousErrorY = pidResult[2];
   pidIntegrateY = pidResult[3];
   esc.escRedRight.writeMicroseconds(pidResult[0]);
   esc.escRedLeft.writeMicroseconds(pidResult[1]);
+*/
 
   //We wait until 4000us are passed.
   float delta = micros() - loopTimer;
@@ -205,6 +195,7 @@ void loop() {
 /**
    Compute the PID to stabilize the drone
 */
+/*
 void computePid(float totalAngleX, float pidIntegrate, float previousError, float elapsedTime, boolean logResult ) {
 
   error = totalAngleX - refAngleX;
@@ -217,43 +208,16 @@ void computePid(float totalAngleX, float pidIntegrate, float previousError, floa
   pidDerivative = KD * (error - previousError);
 
   pid = pidProportional + pidIntegrate + pidDerivative;
-  pid = constrain(pid, -400, 400);
+  pid = constrain(pid, -MAX_PID, MAX_PID);
 
   pwmLeft = throttle + pid;
   pwmRight = throttle - pid;
   pwmLeft = constrain(pwmLeft, minPulseRate, maxPulseRate);
   pwmRight = constrain(pwmRight, minPulseRate, maxPulseRate);
 
-  if (logResult) {
-    //    Serial.print("PID ");
-    //    Serial.print(pid);
-    //    Serial.print("\t");
-    //    Serial.print(pidProportional);
-    //    Serial.print("\t");
-    //    Serial.print(pidIntegrate);
-    //    Serial.print("\t");
-    //    Serial.print(pidDerivative);
-    //    Serial.print(" \t ");
-    //Serial.print(pwmLeft);
-    //Serial.print(" \t ");
-    //Serial.print(pwmRight);
-    // Serial.print("   -- elapsedTime ");
-    // Serial.print(elapsedTime);
-    // Serial.print(" - throttle ");
-    // Serial.print(throttle);
-    //    Serial.print("\t");
-    //    Serial.print(totalAngleX);
-    //    Serial.print(" \t ");
-    //    Serial.print(refAngleX);
-    //    Serial.print(" \t ");
-    //    Serial.print(error);
-  }
-
   pidResult[0] = pwmRight;
   pidResult[1] = pwmLeft;
   pidResult[2] = error;
   pidResult[3] = pidIntegrate;
   pidResult[4] = pid;
-}
-
-
+}*/

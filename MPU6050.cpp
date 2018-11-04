@@ -144,10 +144,10 @@ AccelAngles MPU6050::computeAngles() {
   }
 
 
-  //Serial.print(accelAngles.pitch);
-  //Serial.print(" \t");
-  //Serial.print( accelAngles.roll);
-  //Serial.print(" \t");
+  Serial.print(accelAngles.pitch);
+  Serial.print(" \t");
+  Serial.print( accelAngles.roll);
+  Serial.print(" \t");
 
 
   return accelAngles;
@@ -160,4 +160,3 @@ void MPU6050::printAngles() {
   Serial.print("\tRoll angle: ");
   Serial.println(this->accelAngles.roll);
 }
-
