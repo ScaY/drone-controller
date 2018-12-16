@@ -1,9 +1,9 @@
 #ifndef PID_h
 #define PID_h
 
-#define KP (0.25)
-#define KI (0.00)
-#define KD (0.00)
+#define KP (6.50)
+#define KI (0.001)
+#define KD (10.00)
 #define MAX_PID (100)
 
 struct PIDDrone {
@@ -22,7 +22,7 @@ struct PIDResult {
 class PID {
 
   private:
-    PIDResult computePid(float angle, float refAngle, float pidIntegrate, float previousError);
+    PIDResult computePid(float angle, float refAngle, double pidIntegrate, float previousError);
 
     PIDResult computePidPitch(float angle);
     PIDResult computePidRoll(float angle);

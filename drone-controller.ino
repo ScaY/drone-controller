@@ -57,7 +57,7 @@ int input[4];
 void setup() {
 
   Wire.begin();
-  Serial.begin(115200);
+  //Serial.begin(115200);
 
   mpu.init();
   fsi.init();
@@ -87,14 +87,6 @@ void setup() {
   pid.refAnglePitch = accelAngles.pitch;
   pid.refAngleRoll = accelAngles.roll;
   pid.refAngleYaw = accelAngles.yaw;
-
-  Serial.print("P: ");
-  Serial.print(KP);
-  Serial.print(" I: ");
-  Serial.print(KI);
-  Serial.print(" D: ");
-  Serial.println(KD);
-
 }
 
 ISR(PCINT0_vect) {
@@ -164,12 +156,23 @@ void loop() {
 
 
   PIDDrone pidDrone = pid.computePidDrone(accelAngles.pitch, accelAngles.roll, accelAngles.yaw);
+
+
+  float frontLeft = throttle + pidDrone.frontLeft;
+  float frontRight = throttle + pidDrone.frontRight;
+  float rearLeft = throttle + pidDrone.rearLeft;
+  float rearRight = throttle + pidDrone.rearRight;
   
-  esc.frontLeft.writeMicroseconds(throttle + pidDrone.frontLeft);
-  esc.frontRight.writeMicroseconds(throttle + pidDrone.frontRight);
-  esc.rearLeft.writeMicroseconds(throttle + pidDrone.rearLeft);
-  esc.rearRight.writeMicroseconds(throttle + pidDrone.rearRight);
+  frontLeft = max(frontLeft, MIN_PULSE_RATE);
+  frontRight = max(frontRight, MIN_PULSE_RATE);
+  rearLeft = max(rearLeft, MIN_PULSE_RATE);
+  rearRight = max(rearRight, MIN_PULSE_RATE);
   
+  esc.frontLeft.writeMicroseconds(frontLeft);
+  esc.frontRight.writeMicroseconds(frontRight);
+  esc.rearLeft.writeMicroseconds(rearLeft);
+  esc.rearRight.writeMicroseconds(rearRight);
+
   if (abs(pidResult[4]) > 10) {
     digitalWrite(ledPidWhitePin, HIGH);
   } else {
@@ -179,39 +182,9 @@ void loop() {
 
   //We wait until 4000us are passed.
   float delta = micros() - loopTimer;
-  Serial.print("\t");
-  Serial.println(delta);
+  //Serial.print("\t");
+  //Serial.println(delta);
   while (micros() - loopTimer < 4000);
   loopTimer = micros();
 
 }
-
-/**
-   Compute the PID to stabilize the drone
-*/
-/*
-void computePid(float totalAngleX, float pidIntegrate, float previousError, float elapsedTime, boolean logResult ) {
-
-  error = totalAngleX - refAngleX;
-
-  pidProportional = KP * error;
-  if (error < 3 && error > -3) {
-    pidIntegrate = pidIntegrate + KI * error;
-  }
-  //pidDerivative = KD * ( (error - previousError) / elapsedTime);
-  pidDerivative = KD * (error - previousError);
-
-  pid = pidProportional + pidIntegrate + pidDerivative;
-  pid = constrain(pid, -MAX_PID, MAX_PID);
-
-  pwmLeft = throttle + pid;
-  pwmRight = throttle - pid;
-  pwmLeft = constrain(pwmLeft, minPulseRate, maxPulseRate);
-  pwmRight = constrain(pwmRight, minPulseRate, maxPulseRate);
-
-  pidResult[0] = pwmRight;
-  pidResult[1] = pwmLeft;
-  pidResult[2] = error;
-  pidResult[3] = pidIntegrate;
-  pidResult[4] = pid;
-}*/

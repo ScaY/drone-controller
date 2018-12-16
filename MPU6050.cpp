@@ -143,12 +143,12 @@ AccelAngles MPU6050::computeAngles() {
     this->setupGyro = true;
   }
 
-
+/*
   Serial.print(accelAngles.pitch);
   Serial.print(" \t");
   Serial.print( accelAngles.roll);
   Serial.print(" \t");
-
+*/
 
   return accelAngles;
 }
